@@ -10,14 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as BoutiqueRouteImport } from './routes/boutique'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CosmeticsRouteImport } from './routes/cosmetics'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as AuthenticatedMyBookingsRouteImport } from './routes/_authenticated/my-bookings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BoutiqueRoute = BoutiqueRouteImport.update({
@@ -40,6 +46,11 @@ const ServicesRoute = ServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedMyBookingsRoute = AuthenticatedMyBookingsRouteImport.update({
+  id: '/my-bookings',
+  path: '/my-bookings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +58,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/cosmetics': typeof CosmeticsRoute
   '/services': typeof ServicesRoute
+  '/my-bookings': typeof AuthenticatedMyBookingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,25 +66,39 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/cosmetics': typeof CosmeticsRoute
   '/services': typeof ServicesRoute
+  '/my-bookings': typeof AuthenticatedMyBookingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/boutique': typeof BoutiqueRoute
   '/contact': typeof ContactRoute
   '/cosmetics': typeof CosmeticsRoute
   '/services': typeof ServicesRoute
+  '/_authenticated/my-bookings': typeof AuthenticatedMyBookingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/boutique' | '/contact' | '/cosmetics' | '/services'
+  fullPaths:
+    '/' | '/boutique' | '/contact' | '/cosmetics' | '/services' | '/my-bookings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/boutique' | '/contact' | '/cosmetics' | '/services'
-  id: '__root__' | '/' | '/boutique' | '/contact' | '/cosmetics' | '/services'
+  to:
+    '/' | '/boutique' | '/contact' | '/cosmetics' | '/services' | '/my-bookings'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/boutique'
+    | '/contact'
+    | '/cosmetics'
+    | '/services'
+    | '/_authenticated/my-bookings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   BoutiqueRoute: typeof BoutiqueRoute
   ContactRoute: typeof ContactRoute
   CosmeticsRoute: typeof CosmeticsRoute
@@ -86,6 +112,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/boutique': {
@@ -116,11 +149,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/my-bookings': {
+      id: '/_authenticated/my-bookings'
+      path: '/my-bookings'
+      fullPath: '/my-bookings'
+      preLoaderRoute: typeof AuthenticatedMyBookingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedMyBookingsRoute: typeof AuthenticatedMyBookingsRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedMyBookingsRoute: AuthenticatedMyBookingsRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   BoutiqueRoute: BoutiqueRoute,
   ContactRoute: ContactRoute,
   CosmeticsRoute: CosmeticsRoute,
