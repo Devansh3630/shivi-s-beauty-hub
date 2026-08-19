@@ -109,7 +109,7 @@ function ServicesPage() {
           {isLoading ? (
             <p className="text-muted-foreground">Loading price list…</p>
           ) : (
-            <Tabs defaultValue={categories[0]}>
+            <Tabs defaultValue={categories[0] ?? "Hair"}>
               <TabsList className="flex h-auto flex-wrap justify-start">
                 {categories.map((category) => (
                   <TabsTrigger key={category} value={category}>
