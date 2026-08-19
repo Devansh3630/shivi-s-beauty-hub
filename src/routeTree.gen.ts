@@ -15,6 +15,7 @@ import { Route as BoutiqueRouteImport } from './routes/boutique'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CosmeticsRouteImport } from './routes/cosmetics'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedMyBookingsRouteImport } from './routes/_authenticated/my-bookings'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +47,11 @@ const ServicesRoute = ServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMyBookingsRoute = AuthenticatedMyBookingsRouteImport.update({
   id: '/my-bookings',
   path: '/my-bookings',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/cosmetics': typeof CosmeticsRoute
   '/services': typeof ServicesRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/my-bookings': typeof AuthenticatedMyBookingsRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/cosmetics': typeof CosmeticsRoute
   '/services': typeof ServicesRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/my-bookings': typeof AuthenticatedMyBookingsRoute
 }
 export interface FileRoutesById {
@@ -76,15 +84,28 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/cosmetics': typeof CosmeticsRoute
   '/services': typeof ServicesRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/my-bookings': typeof AuthenticatedMyBookingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/boutique' | '/contact' | '/cosmetics' | '/services' | '/my-bookings'
+    | '/'
+    | '/boutique'
+    | '/contact'
+    | '/cosmetics'
+    | '/services'
+    | '/admin'
+    | '/my-bookings'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/boutique' | '/contact' | '/cosmetics' | '/services' | '/my-bookings'
+    | '/'
+    | '/boutique'
+    | '/contact'
+    | '/cosmetics'
+    | '/services'
+    | '/admin'
+    | '/my-bookings'
   id:
     | '__root__'
     | '/'
@@ -93,6 +114,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/cosmetics'
     | '/services'
+    | '/_authenticated/admin'
     | '/_authenticated/my-bookings'
   fileRoutesById: FileRoutesById
 }
@@ -149,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/my-bookings': {
       id: '/_authenticated/my-bookings'
       path: '/my-bookings'
@@ -160,10 +189,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedMyBookingsRoute: typeof AuthenticatedMyBookingsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedMyBookingsRoute: AuthenticatedMyBookingsRoute,
 }
 
