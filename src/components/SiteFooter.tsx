@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, MapPin, Phone, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Clock, MessageCircle, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SHOP, whatsappLink } from "@/lib/shop";
@@ -42,6 +42,15 @@ export function SiteFooter() {
                 rel="noreferrer"
               >
                 <MessageCircle className="size-4" aria-hidden /> WhatsApp
+              </a>
+            </Button>
+            <Button asChild variant="ghost">
+              <a
+                href={SHOP.googleMapsListing}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink className="size-4" aria-hidden /> View on Google Maps
               </a>
             </Button>
           </div>

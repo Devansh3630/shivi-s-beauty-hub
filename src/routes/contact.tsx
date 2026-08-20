@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Clock, MapPin, MessageCircle, Phone, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,8 +64,8 @@ function ContactPage() {
           </a>
         </Button>
         <Button asChild size="lg" variant="ghost">
-          <a href={SHOP.mapsLink} target="_blank" rel="noreferrer">
-            Open in Google Maps
+          <a href={SHOP.googleMapsListing} target="_blank" rel="noreferrer">
+            <ExternalLink className="size-4" aria-hidden /> View on Google Maps
           </a>
         </Button>
       </div>

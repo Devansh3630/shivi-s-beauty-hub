@@ -5,8 +5,10 @@ export const SHOP = {
   phoneIntl: "+917897179580",
   hours: "10:00 AM – 9:00 PM (Open Daily)",
   mapsEmbed:
-    "https://www.google.com/maps?q=Kabir+Pur+Sultanpur+Road+Lucknow+226501&output=embed",
-  mapsLink: "https://www.google.com/maps?q=Kabir+Pur+Sultanpur+Road+Lucknow+226501",
+    "https://www.google.com/maps?q=Shivi+Parlour+%26+Boutique+Kabir+Pur+Sultanpur+Road+Lucknow+226501&output=embed",
+  mapsLink:
+    "https://share.google/fcOCPgscJ9npXDIzy",
+  googleMapsListing: "https://share.google/fcOCPgscJ9npXDIzy",
 } as const;
 
 export const TIME_SLOTS = [
