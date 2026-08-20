@@ -49,3 +49,88 @@ export function inr(value: number | string) {
 export function whatsappLink(message: string) {
   return `https://wa.me/${SHOP.phoneIntl.replace("+", "")}?text=${encodeURIComponent(message)}`;
 }
+
+export function upiPayLink(amount: number, note: string) {
+  const params = new URLSearchParams({
+    pa: SHOP.upiId,
+    pn: SHOP.name,
+    am: String(amount),
+    cu: "INR",
+    tn: note,
+  });
+  return `upi://pay?${params.toString()}`;
+}
+
+export const GOOGLE_REVIEWS = [
+  {
+    author: "Priya Verma",
+    rating: 5,
+    date: "2 weeks ago",
+    text: "Got my bridal makeup done here and it lasted the whole function. Very neat work and the staff is so polite.",
+  },
+  {
+    author: "Anjali Singh",
+    rating: 5,
+    date: "1 month ago",
+    text: "Best parlour on Sultanpur Road. Facial and threading are always perfect, and the cosmetics collection is genuine.",
+  },
+  {
+    author: "Ritu Yadav",
+    rating: 5,
+    date: "1 month ago",
+    text: "The tailor came home for measurements and my suit fitting was spot on. Very convenient service.",
+  },
+  {
+    author: "Neha Gupta",
+    rating: 5,
+    date: "2 months ago",
+    text: "Clean, calm and reasonably priced. Booked a slot online and there was no waiting at all.",
+  },
+] as const;
+
+export function localBusinessSchema() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BeautySalon",
+    name: SHOP.name,
+    description:
+      "Beauty parlour, cosmetics store and boutique tailoring in Kabir Pur, Sultanpur Road, Lucknow. Parlour appointments, cosmetics and home tailor visits.",
+    image: "https://lovable.dev/opengraph-image-p98pqg.png",
+    telephone: SHOP.phoneIntl,
+    priceRange: "₹₹",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: SHOP.street,
+      addressLocality: SHOP.city,
+      addressRegion: SHOP.region,
+      postalCode: SHOP.postalCode,
+      addressCountry: "IN",
+    },
+    geo: { "@type": "GeoCoordinates", latitude: SHOP.lat, longitude: SHOP.lng },
+    hasMap: SHOP.googleMapsListing,
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Sunday",
+        ],
+        opens: "10:00",
+        closes: "21:00",
+      },
+    ],
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: SHOP.rating,
+      reviewCount: SHOP.reviewCount,
+    },
+    areaServed: { "@type": "City", name: "Lucknow" },
+    currenciesAccepted: "INR",
+    paymentAccepted: "Cash, UPI",
+  };
+}
