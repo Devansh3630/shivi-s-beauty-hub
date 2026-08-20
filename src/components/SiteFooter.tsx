@@ -44,6 +44,15 @@ export function SiteFooter() {
                 <MessageCircle className="size-4" aria-hidden /> WhatsApp
               </a>
             </Button>
+            <Button asChild variant="ghost">
+              <a
+                href={SHOP.googleMapsListing}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <ExternalLink className="size-4" aria-hidden /> View on Google Maps
+              </a>
+            </Button>
           </div>
 
           <nav className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
