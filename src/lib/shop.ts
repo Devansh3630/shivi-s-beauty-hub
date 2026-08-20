@@ -1,15 +1,29 @@
 export const SHOP = {
   name: "Shivi Parlour & Boutique",
   address: "Kabir Pur, Sultanpur Road, Lucknow, UP 226501",
+  street: "Kabir Pur, Sultanpur Road",
+  city: "Lucknow",
+  region: "UP",
+  postalCode: "226501",
+  lat: 26.7606,
+  lng: 81.0026,
   phone: "7897179580",
   phoneIntl: "+917897179580",
   hours: "10:00 AM – 9:00 PM (Open Daily)",
+  // UPI ID used for online booking payments. Update if the shop uses a different handle.
+  upiId: "7897179580@ybl",
+  rating: 5.0,
+  reviewCount: 12,
   mapsEmbed:
     "https://www.google.com/maps?q=Shivi+Parlour+%26+Boutique+Kabir+Pur+Sultanpur+Road+Lucknow+226501&output=embed",
   mapsLink:
     "https://share.google/fcOCPgscJ9npXDIzy",
   googleMapsListing: "https://share.google/fcOCPgscJ9npXDIzy",
+  directionsLink:
+    "https://www.google.com/maps/dir/?api=1&destination=" +
+    encodeURIComponent("Shivi Parlour & Boutique, Kabir Pur, Sultanpur Road, Lucknow, UP 226501"),
 } as const;
+
 
 export const TIME_SLOTS = [
   "10:00 AM",
