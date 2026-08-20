@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, MapPin, Phone, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Clock, MessageCircle, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SHOP, whatsappLink } from "@/lib/shop";
