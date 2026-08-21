@@ -58,13 +58,13 @@ function ContactPage() {
           <a
             href={whatsappLink(`Hello ${SHOP.name}, I'd like to book an appointment.`)}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
           >
             <MessageCircle className="size-4" aria-hidden /> Chat on WhatsApp
           </a>
         </Button>
         <Button asChild size="lg" variant="ghost">
-          <a href={SHOP.googleMapsListing} target="_blank" rel="noreferrer">
+          <a href={SHOP.googleMapsListing} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="size-4" aria-hidden /> View on Google Maps
           </a>
         </Button>

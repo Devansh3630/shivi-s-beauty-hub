@@ -26,15 +26,48 @@ export function AuthModal() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const cleanEmail = form.email.trim().toLowerCase();
+    const cleanPassword = form.password;
+    const cleanName = form.name.trim();
+    const cleanPhone = form.phone.trim().replace(/\D/g, "");
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    // Password validation
+    if (cleanPassword.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+    if (cleanPassword.length > 72) {
+      toast.error("Password is too long (maximum 72 characters).");
+      return;
+    }
+
+    if (mode === "signup") {
+      if (cleanName.length < 2 || cleanName.length > 100) {
+        toast.error("Please enter your full name (2–100 characters).");
+        return;
+      }
+      if (cleanPhone.length !== 10) {
+        toast.error("Please enter a valid 10-digit mobile number.");
+        return;
+      }
+    }
+
     setBusy(true);
     try {
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
-          email: form.email.trim(),
-          password: form.password,
+          email: cleanEmail,
+          password: cleanPassword,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: form.name.trim(), phone: form.phone.trim() },
+            data: { full_name: cleanName, phone: cleanPhone },
           },
         });
         if (error) throw error;
@@ -46,15 +79,22 @@ export function AuthModal() {
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email: form.email.trim(),
-          password: form.password,
+          email: cleanEmail,
+          password: cleanPassword,
         });
         if (error) throw error;
         toast.success("Signed in successfully");
         closeAuth();
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Something went wrong");
+      const msg = error instanceof Error ? error.message : "Authentication failed";
+      if (msg.toLowerCase().includes("invalid login credentials")) {
+        toast.error("Incorrect email or password. Please try again.");
+      } else if (msg.toLowerCase().includes("user already registered")) {
+        toast.error("An account with this email already exists. Please sign in.");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setBusy(false);
     }

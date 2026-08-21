@@ -39,17 +39,13 @@ export function SiteFooter() {
               <a
                 href={whatsappLink(`Hello ${SHOP.name}, I would like to know more.`)}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
               >
                 <MessageCircle className="size-4" aria-hidden /> WhatsApp
               </a>
             </Button>
             <Button asChild variant="ghost">
-              <a
-                href={SHOP.googleMapsListing}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href={SHOP.googleMapsListing} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="size-4" aria-hidden /> View on Google Maps
               </a>
             </Button>

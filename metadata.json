@@ -1,0 +1,6 @@
+{
+  "name": "Shivi Parlour & Boutique",
+  "description": "Beauty parlour, cosmetics store, and boutique tailoring in Lucknow featuring service appointments, cosmetics boutique, and home tailor booking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

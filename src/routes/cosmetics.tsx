@@ -70,14 +70,29 @@ function CosmeticsPage() {
   const checkout = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Please sign in first.");
+      if (!cart.items.length) throw new Error("Your cart is empty.");
+      if (cart.total <= 0) throw new Error("Invalid order total.");
+
+      const sanitizedItems = cart.items.map((item) => ({
+        id: item.id,
+        name: String(item.name).slice(0, 100),
+        price: Number(item.price),
+        quantity: Math.max(1, Math.min(99, Math.floor(Number(item.quantity)))),
+      }));
+
+      const validPayment = payment === "upi" ? "upi" : "shop";
+      const sanitizedAddress = address.trim().slice(0, 500);
+      const customerName = (profile?.full_name ?? "").trim().slice(0, 100);
+      const customerPhone = (profile?.phone ?? "").trim().slice(0, 20);
+
       const { error } = await supabase.from("orders").insert({
         user_id: user.id,
-        items: cart.items,
+        items: sanitizedItems,
         total_amount: cart.total,
-        payment_method: payment,
-        customer_name: profile?.full_name ?? "",
-        customer_phone: profile?.phone ?? "",
-        address,
+        payment_method: validPayment,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        address: sanitizedAddress,
       });
       if (error) throw error;
     },

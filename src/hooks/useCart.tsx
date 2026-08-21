@@ -27,21 +27,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       count: items.reduce((sum, i) => sum + i.quantity, 0),
       total: items.reduce((sum, i) => sum + i.quantity * i.price, 0),
-      add: (item) =>
+      add: (item) => {
+        if (
+          !item.id ||
+          !item.name ||
+          typeof item.price !== "number" ||
+          isNaN(item.price) ||
+          item.price < 0
+        ) {
+          return;
+        }
         setItems((prev) => {
           const found = prev.find((p) => p.id === item.id);
           if (found) {
-            return prev.map((p) => (p.id === item.id ? { ...p, quantity: p.quantity + 1 } : p));
+            const nextQty = Math.min(found.quantity + 1, 99);
+            return prev.map((p) => (p.id === item.id ? { ...p, quantity: nextQty } : p));
           }
           return [...prev, { ...item, quantity: 1 }];
-        }),
+        });
+      },
       remove: (id) => setItems((prev) => prev.filter((p) => p.id !== id)),
-      setQuantity: (id, quantity) =>
-        setItems((prev) =>
-          quantity <= 0
-            ? prev.filter((p) => p.id !== id)
-            : prev.map((p) => (p.id === id ? { ...p, quantity } : p)),
-        ),
+      setQuantity: (id, rawQuantity) => {
+        const quantity = Math.floor(rawQuantity);
+        setItems((prev) => {
+          if (isNaN(quantity) || quantity <= 0) {
+            return prev.filter((p) => p.id !== id);
+          }
+          const clampedQty = Math.min(quantity, 99);
+          return prev.map((p) => (p.id === id ? { ...p, quantity: clampedQty } : p));
+        });
+      },
       clear: () => setItems([]),
     };
   }, [items]);
