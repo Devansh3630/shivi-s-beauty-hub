@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CalendarCheck2, Menu, Phone, ShoppingBag, Sparkles } from "lucide-react";
+import { CalendarCheck2, Menu, Phone, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import { useCart } from "@/hooks/useCart";
 import { SHOP } from "@/lib/shop";
 
 const links = [
@@ -24,7 +23,6 @@ const links = [
 
 export function SiteHeader() {
   const { user, profile, isAdmin, openAuth, signOut } = useAuth();
-  const { count } = useCart();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -94,17 +92,6 @@ export function SiteHeader() {
             <a href={`tel:${SHOP.phoneIntl}`} aria-label="Call the shop">
               <Phone className="size-4" aria-hidden />
             </a>
-          </Button>
-
-          <Button asChild variant="ghost" size="icon" className="relative">
-            <Link to="/cosmetics" aria-label="Cart">
-              <ShoppingBag className="size-4" aria-hidden />
-              {count > 0 && (
-                <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                  {count}
-                </span>
-              )}
-            </Link>
           </Button>
 
           {user ? (

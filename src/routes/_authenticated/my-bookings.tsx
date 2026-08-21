@@ -69,11 +69,36 @@ type ActiveReceipt =
   | { type: "order"; data: CosmeticsOrderReceiptData }
   | null;
 
+type CancelTarget =
+  | {
+      type: "appointment";
+      id: string;
+      title: string;
+      details: string;
+      chair?: string;
+      price?: number;
+    }
+  | {
+      type: "visit";
+      id: string;
+      title: string;
+      details: string;
+    }
+  | {
+      type: "order";
+      id: string;
+      title: string;
+      details: string;
+      amount?: number;
+    }
+  | null;
+
 function MyBookings() {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"all" | "parlour" | "boutique" | "cosmetics">("all");
   const [activeReceipt, setActiveReceipt] = useState<ActiveReceipt>(null);
+  const [cancelTarget, setCancelTarget] = useState<CancelTarget>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-bookings", user?.id],
@@ -116,13 +141,53 @@ function MyBookings() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Appointment cancelled and chair released.");
+      toast.success("Appointment cancelled and chair slot released.");
+      setCancelTarget(null);
       queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["my-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["date-bookings"] });
       queryClient.invalidateQueries({ queryKey: ["admin"] });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to cancel appointment");
+    },
+  });
+
+  const cancelVisit = useMutation({
+    mutationFn: async (visitId: string) => {
+      const { error } = await supabase
+        .from("tailor_visits")
+        .update({ status: "cancelled" })
+        .eq("id", visitId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Home tailor visit request cancelled.");
+      setCancelTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to cancel tailor visit");
+    },
+  });
+
+  const cancelOrder = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "cancelled" })
+        .eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Cosmetics order cancelled.");
+      setCancelTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["my-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to cancel order");
     },
   });
 
@@ -351,18 +416,20 @@ function MyBookings() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-8 text-xs text-destructive hover:bg-destructive/10"
+                          className="h-8 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
                           disabled={cancelAppointment.isPending}
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                "Are you sure you want to cancel this appointment? Your chair slot will be released.",
-                              )
-                            ) {
-                              cancelAppointment.mutate(row.id);
-                            }
-                          }}
+                          onClick={() =>
+                            setCancelTarget({
+                              type: "appointment",
+                              id: row.id,
+                              title: row.service_name,
+                              details: `${row.appointment_date} · ${row.time_slot} – ${endTime} (${chair})`,
+                              chair,
+                              price: row.price,
+                            })
+                          }
                         >
+                          <X className="size-3.5 mr-1" />
                           Cancel
                         </Button>
                       )}
@@ -409,6 +476,7 @@ function MyBookings() {
                 address: row.address,
                 status: row.status,
               };
+              const isVisitCancellable = row.status !== "cancelled" && row.status !== "completed";
 
               return (
                 <Card key={row.id} className="transition-all hover:border-primary/40 shadow-xs">
@@ -416,7 +484,16 @@ function MyBookings() {
                     <div className="space-y-1.5 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-foreground text-base">{row.outfit_type}</p>
-                        <Badge variant="secondary" className="capitalize text-xs">
+                        <Badge
+                          variant={
+                            row.status === "confirmed"
+                              ? "default"
+                              : row.status === "cancelled"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="capitalize text-xs"
+                        >
                           {row.status}
                         </Badge>
                       </div>
@@ -453,6 +530,26 @@ function MyBookings() {
                         <FileText className="size-3.5 mr-1" />
                         Receipt
                       </Button>
+
+                      {isVisitCancellable && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={cancelVisit.isPending}
+                          onClick={() =>
+                            setCancelTarget({
+                              type: "visit",
+                              id: row.id,
+                              title: row.outfit_type,
+                              details: `${row.preferred_date} (${row.preferred_slot}) · ${row.address}`,
+                            })
+                          }
+                        >
+                          <X className="size-3.5 mr-1" />
+                          Cancel
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -499,6 +596,10 @@ function MyBookings() {
                 status: row.status,
                 created_at: row.created_at,
               };
+              const isOrderCancellable =
+                row.status !== "cancelled" &&
+                row.status !== "completed" &&
+                row.status !== "delivered";
 
               return (
                 <Card key={row.id} className="transition-all hover:border-primary/40 shadow-xs">
@@ -508,7 +609,16 @@ function MyBookings() {
                         <p className="font-semibold text-foreground text-base">
                           Order #{row.id.slice(0, 8).toUpperCase()}
                         </p>
-                        <Badge variant="secondary" className="capitalize text-xs">
+                        <Badge
+                          variant={
+                            row.status === "confirmed"
+                              ? "default"
+                              : row.status === "cancelled"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="capitalize text-xs"
+                        >
                           {row.status}
                         </Badge>
                       </div>
@@ -549,6 +659,27 @@ function MyBookings() {
                         <FileText className="size-3.5 mr-1" />
                         Receipt
                       </Button>
+
+                      {isOrderCancellable && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={cancelOrder.isPending}
+                          onClick={() =>
+                            setCancelTarget({
+                              type: "order",
+                              id: row.id,
+                              title: `Order #${row.id.slice(0, 8).toUpperCase()}`,
+                              details: `${new Date(row.created_at).toLocaleDateString("en-IN")} · ${row.payment_method === "upi" ? "UPI" : "COD"}`,
+                              amount: row.total_amount,
+                            })
+                          }
+                        >
+                          <X className="size-3.5 mr-1" />
+                          Cancel
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -566,6 +697,85 @@ function MyBookings() {
           </div>
         </section>
       )}
+
+      {/* In-App Cancellation Confirmation Dialog (No window.confirm blocking) */}
+      <Dialog open={Boolean(cancelTarget)} onOpenChange={(open) => !open && setCancelTarget(null)}>
+        <DialogContent className="max-w-md p-6">
+          {cancelTarget && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+                  <X className="size-5" />
+                </div>
+                <div>
+                  <DialogTitle className="text-lg font-semibold text-foreground">
+                    {cancelTarget.type === "appointment"
+                      ? "Cancel Parlour Appointment?"
+                      : cancelTarget.type === "visit"
+                        ? "Cancel Tailor Home Visit?"
+                        : "Cancel Cosmetics Order?"}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    {cancelTarget.type === "appointment"
+                      ? "This will immediately release your booked slot and salon chair for other customers."
+                      : "Are you sure you want to cancel this booking?"}
+                  </DialogDescription>
+                </div>
+              </div>
+
+              <div className="rounded-lg border bg-muted/40 p-3.5 text-xs space-y-1.5">
+                <p className="font-semibold text-foreground text-sm">{cancelTarget.title}</p>
+                <p className="text-muted-foreground">{cancelTarget.details}</p>
+                {cancelTarget.price !== undefined && (
+                  <p className="text-primary font-mono font-medium pt-1">
+                    Amount: {inr(cancelTarget.price)}
+                  </p>
+                )}
+                {cancelTarget.amount !== undefined && (
+                  <p className="text-primary font-mono font-medium pt-1">
+                    Total: {inr(cancelTarget.amount)}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCancelTarget(null)}
+                  disabled={
+                    cancelAppointment.isPending || cancelVisit.isPending || cancelOrder.isPending
+                  }
+                >
+                  Keep Booking
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={
+                    cancelAppointment.isPending || cancelVisit.isPending || cancelOrder.isPending
+                  }
+                  onClick={() => {
+                    if (cancelTarget.type === "appointment") {
+                      cancelAppointment.mutate(cancelTarget.id);
+                    } else if (cancelTarget.type === "visit") {
+                      cancelVisit.mutate(cancelTarget.id);
+                    } else if (cancelTarget.type === "order") {
+                      cancelOrder.mutate(cancelTarget.id);
+                    }
+                  }}
+                >
+                  {cancelAppointment.isPending || cancelVisit.isPending || cancelOrder.isPending
+                    ? "Cancelling..."
+                    : "Yes, Cancel Booking"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Official Printable Bill & Invoice Dialog */}
       <Dialog open={Boolean(activeReceipt)} onOpenChange={() => setActiveReceipt(null)}>

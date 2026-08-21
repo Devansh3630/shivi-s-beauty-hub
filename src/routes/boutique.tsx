@@ -24,6 +24,8 @@ import {
   BadgePercent,
   CheckCircle,
   MessageCircle,
+  ExternalLink,
+  Lock,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -60,6 +62,7 @@ import {
   getBoutiqueItemPrice,
   calculateDeliveryFee,
   calculateDistanceKm,
+  getGoogleMapsRouteUrl,
   LUCKNOW_POPULAR_AREAS,
   FREE_DELIVERY_RADIUS_KM,
   PER_KM_CHARGE,
@@ -67,6 +70,7 @@ import {
   generateTailorVisitWhatsAppText,
   openWhatsAppBill,
 } from "@/lib/shop";
+import { GoogleMapsLocationPicker } from "@/components/GoogleMapsLocationPicker";
 
 function BoutiqueInfoNote({
   icon: Icon,
@@ -224,6 +228,7 @@ function BoutiquePage() {
   const [selectedArea, setSelectedArea] = useState<string>("Kabir Pur / Sultanpur Road (Local)");
   const [distanceKm, setDistanceKm] = useState<number>(1);
   const [isDetectingGps, setIsDetectingGps] = useState(false);
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
 
   const [form, setForm] = useState({
     address: "",
@@ -297,7 +302,7 @@ function BoutiquePage() {
     }
   };
 
-  // Handle GPS location detection
+  // Optional GPS location detection
   const handleDetectGps = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser.");
@@ -305,22 +310,41 @@ function BoutiquePage() {
     }
     setIsDetectingGps(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         setIsDetectingGps(false);
-        const dist = calculateDistanceKm(
-          SHOP.lat,
-          SHOP.lng,
-          pos.coords.latitude,
-          pos.coords.longitude,
-        );
+        const { latitude, longitude } = pos.coords;
+        const dist = calculateDistanceKm(SHOP.lat, SHOP.lng, latitude, longitude);
         setDistanceKm(dist);
         setSelectedArea("Custom / Enter Distance Manually");
-        toast.success(`Detected distance: ~${dist} km from Shivi Boutique.`);
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { headers: { "Accept-Language": "en" } },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const fullReadable = data.display_name
+              ? data.display_name.split(",").slice(0, 4).join(",").trim()
+              : "";
+            if (fullReadable && (!form.address || form.address.length < 5)) {
+              setForm((prev) => ({ ...prev, address: fullReadable }));
+            }
+          }
+        } catch {
+          // Ignore
+        }
+
+        const feeObj = calculateDeliveryFee(dist);
+        if (feeObj.isFree) {
+          toast.success(`Location detected (~${dist} km from Boutique). Within 5 km - 100% FREE!`);
+        } else {
+          toast.success(`Location detected (~${dist} km): +₹${feeObj.deliveryFee} travel fee.`);
+        }
       },
-      (err) => {
+      () => {
         setIsDetectingGps(false);
-        toast.error("Could not fetch location. Please select your area manually.");
-        console.error(err);
+        toast.info("Please select your area from the list or click 'Select on Google Map'.");
       },
       { timeout: 10000, enableHighAccuracy: true },
     );
@@ -961,14 +985,24 @@ function BoutiquePage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleDetectGps}
-                    disabled={isDetectingGps}
-                    className="h-7 text-[11px] px-2.5"
+                    onClick={() => setIsMapPickerOpen(true)}
+                    className="h-7 text-[11px] px-2.5 border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 font-semibold"
                   >
-                    <Navigation className="size-3 mr-1 text-primary" />
-                    {isDetectingGps ? "Detecting GPS…" : "Detect My Distance"}
+                    <MapPin className="size-3 mr-1" />
+                    🗺️ Select on Google Map
                   </Button>
                 </div>
+
+                {/* Google Maps Selector Banner Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsMapPickerOpen(true)}
+                  className="w-full h-9 text-xs font-semibold border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary flex items-center justify-center gap-2 shadow-2xs"
+                >
+                  <MapPin className="size-4 text-primary" />
+                  <span>🗺️ Select / Search Location on Google Map</span>
+                </Button>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
@@ -980,7 +1014,7 @@ function BoutiquePage() {
                       <SelectContent>
                         {LUCKNOW_POPULAR_AREAS.map((area) => (
                           <SelectItem key={area.name} value={area.name} className="text-xs">
-                            {area.name} (~{area.distanceKm} km)
+                            {area.name} ({area.distanceKm} km)
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -989,50 +1023,62 @@ function BoutiquePage() {
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <Label htmlFor="distance-input" className="text-muted-foreground">
-                        Distance from Boutique
+                      <Label className="text-muted-foreground flex items-center gap-1">
+                        <Lock className="size-3 text-muted-foreground" /> Distance (Auto-Fixed)
                       </Label>
                       <span className="font-semibold text-primary font-mono">{distanceKm} km</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="distance-input"
-                        type="number"
-                        min={0.5}
-                        max={50}
-                        step={0.5}
-                        value={distanceKm}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 1;
-                          setDistanceKm(val);
-                          setSelectedArea("Custom / Enter Distance Manually");
-                        }}
-                        className="text-xs h-9 font-mono"
-                      />
-                      <span className="text-xs text-muted-foreground shrink-0">km</span>
+                    {/* Auto-locked distance field based on selected locality */}
+                    <div className="flex items-center justify-between h-9 px-3 rounded-md border border-border/80 bg-muted/50 text-xs font-mono font-medium text-foreground select-none">
+                      <span className="flex items-center gap-1.5">
+                        <Lock className="size-3.5 text-muted-foreground/70" />
+                        <span>{distanceKm} km from Boutique</span>
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-sans">
+                        {deliveryCalc.isFree ? "Free (≤5km)" : `+${deliveryCalc.extraKm}km extra`}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Distance calculation feedback */}
-                <div className="rounded-lg bg-muted/40 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
+                {/* Distance calculation feedback with Google Route link & 9-5=4km explanation */}
+                <div className="rounded-lg bg-muted/40 p-2.5 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-border/60">
                   <div className="flex items-center gap-1.5">
                     <MapPin className="size-3.5 text-primary shrink-0" />
                     <span>
-                      Shop: Kabir Pur, Sultanpur Rd → <strong>{distanceKm} km</strong>
+                      Kabir Pur, Sultanpur Rd →{" "}
+                      <strong className="text-foreground font-mono">{distanceKm} km</strong>
+                      {deliveryCalc.isFree ? (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium ml-1 font-sans">
+                          (Within 5 km Free Radius)
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 dark:text-amber-400 font-medium ml-1 font-mono">
+                          ({distanceKm} - 5 = {deliveryCalc.extraKm} km extra @ ₹{PER_KM_CHARGE}/km)
+                        </span>
+                      )}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex items-center gap-2">
                     {deliveryCalc.isFree ? (
                       <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                        FREE Delivery (Within 5 km)
+                        FREE Travel (≤ 5 km)
                       </span>
                     ) : (
-                      <span className="font-semibold text-amber-600 dark:text-amber-400">
-                        +{inr(deliveryCalc.deliveryFee)} ({deliveryCalc.extraKm} km extra @ ₹
-                        {PER_KM_CHARGE}/km)
+                      <span className="font-semibold text-amber-600 dark:text-amber-400 font-mono">
+                        +{inr(deliveryCalc.deliveryFee)} ({deliveryCalc.extraKm} km extra)
                       </span>
                     )}
+                    <a
+                      href={getGoogleMapsRouteUrl(SHOP.lat, SHOP.lng, form.address || selectedArea)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-medium shrink-0 bg-background px-2 py-0.5 rounded border shadow-2xs"
+                      title="Check official driving route on Google Maps"
+                    >
+                      <span>Google Route</span>
+                      <ExternalLink className="size-2.5" />
+                    </a>
                   </div>
                 </div>
               </div>
@@ -1350,6 +1396,28 @@ function BoutiquePage() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Google Maps Location & Distance Modal */}
+      <GoogleMapsLocationPicker
+        open={isMapPickerOpen}
+        onOpenChange={setIsMapPickerOpen}
+        currentAddress={form.address}
+        currentDistanceKm={distanceKm}
+        modeTitle="Tailor Home Visit"
+        onConfirm={(res) => {
+          setDistanceKm(res.distanceKm);
+          setForm((prev) => ({ ...prev, address: res.address }));
+          setSelectedArea(res.areaName);
+          if (res.isFree) {
+            toast.success(
+              `Location set: ~${res.distanceKm} km (Within 5 km - 100% FREE Home Visit Travel)`,
+            );
+          } else {
+            toast.success(
+              `Location set: ~${res.distanceKm} km (+${inr(res.extraFee)} tailor travel charge)`,
+            );
+          }
+        }}
+      />
     </div>
   );
 }

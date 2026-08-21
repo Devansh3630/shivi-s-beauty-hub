@@ -25,6 +25,7 @@ import {
   Receipt,
   BadgePercent,
   MessageCircle,
+  Lock,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ import {
   type BookedSlotItem,
   calculateDeliveryFee,
   calculateDistanceKm,
+  getGoogleMapsRouteUrl,
   LUCKNOW_POPULAR_AREAS,
   FREE_DELIVERY_RADIUS_KM,
   PER_KM_CHARGE,
@@ -76,6 +78,7 @@ import {
   generateAppointmentWhatsAppText,
   openWhatsAppBill,
 } from "@/lib/shop";
+import { GoogleMapsLocationPicker } from "@/components/GoogleMapsLocationPicker";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -159,6 +162,7 @@ function ServicesPage() {
   const [selectedArea, setSelectedArea] = useState<string>("Kabir Pur / Sultanpur Road (Local)");
   const [distanceKm, setDistanceKm] = useState<number>(1);
   const [isDetectingGps, setIsDetectingGps] = useState<boolean>(false);
+  const [isMapPickerOpen, setIsMapPickerOpen] = useState<boolean>(false);
 
   const [date, setDate] = useState("");
   const [slot, setSlot] = useState<string>("");
@@ -370,7 +374,7 @@ function ServicesPage() {
     }
   };
 
-  // Handle GPS location detection
+  // Optional GPS location detection
   const handleDetectGps = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser.");
@@ -378,25 +382,49 @@ function ServicesPage() {
     }
     setIsDetectingGps(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         setIsDetectingGps(false);
-        const dist = calculateDistanceKm(
-          SHOP.lat,
-          SHOP.lng,
-          pos.coords.latitude,
-          pos.coords.longitude,
-        );
+        const { latitude, longitude } = pos.coords;
+        const dist = calculateDistanceKm(SHOP.lat, SHOP.lng, latitude, longitude);
         setDistanceKm(dist);
         setSelectedArea("Custom / Enter Distance Manually");
-        toast.success(`Detected distance: ~${dist} km from Shivi Salon.`);
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            { headers: { "Accept-Language": "en" } },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const fullReadable = data.display_name
+              ? data.display_name.split(",").slice(0, 4).join(",").trim()
+              : "";
+            if (fullReadable) {
+              setPickupAddress(fullReadable);
+            }
+          }
+        } catch {
+          // Ignore
+        }
+
+        const feeObj = calculateDeliveryFee(dist);
+        if (feeObj.isFree) {
+          toast.success(`Detected ~${dist} km from Salon. Within 5 km - 100% FREE!`);
+        } else {
+          toast.success(`Detected ~${dist} km: +₹${feeObj.deliveryFee} travel charge.`);
+        }
       },
-      (err) => {
+      () => {
         setIsDetectingGps(false);
-        toast.error("Could not fetch location. Please select your area manually.");
-        console.error(err);
+        toast.info("Please select your area from the list or click 'Select on Google Map'.");
       },
       { timeout: 10000, enableHighAccuracy: true },
     );
+  };
+
+  // Toggle Pickup & Drop (no intrusive auto-prompt)
+  const handleTogglePickupDrop = (enable: boolean) => {
+    setNeedPickupDrop(enable);
   };
 
   // Calculated totals across all selected services
@@ -1223,17 +1251,22 @@ function ServicesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Car className="size-4 text-primary" />
-                  <span className="text-xs font-semibold text-foreground">
-                    Need Salon Pickup & Drop?
-                  </span>
+                  <div>
+                    <span className="text-xs font-semibold text-foreground block">
+                      Need Salon Pickup & Drop?
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Auto-detects GPS distance & adds extra charges beyond 5 km
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => setNeedPickupDrop(false)}
-                    className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                    onClick={() => handleTogglePickupDrop(false)}
+                    className={`px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors ${
                       !needPickupDrop
-                        ? "bg-primary text-primary-foreground font-semibold"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -1241,13 +1274,14 @@ function ServicesPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setNeedPickupDrop(true)}
-                    className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                    onClick={() => handleTogglePickupDrop(true)}
+                    className={`px-2.5 py-1.5 rounded text-[11px] font-medium transition-colors flex items-center gap-1 ${
                       needPickupDrop
-                        ? "bg-primary text-primary-foreground font-semibold"
+                        ? "bg-primary text-primary-foreground font-semibold shadow-2xs"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
                   >
+                    <Navigation className="size-3" />
                     Pickup & Drop
                   </button>
                 </div>
@@ -1255,26 +1289,72 @@ function ServicesPage() {
 
               {needPickupDrop && (
                 <div className="space-y-3 pt-1 border-t border-border/60">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-muted-foreground">
-                      Free within 5 km • ₹{PER_KM_CHARGE}/km beyond 5 km
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleDetectGps}
-                      disabled={isDetectingGps}
-                      className="h-6 text-[10px] px-1.5 text-primary"
-                    >
-                      <Navigation className="size-2.5 mr-1" />
-                      {isDetectingGps ? "Detecting…" : "Detect GPS"}
-                    </Button>
+                  {/* Google Maps Interactive Picker Button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsMapPickerOpen(true)}
+                    className="w-full h-9 text-xs font-semibold border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary flex items-center justify-center gap-2 shadow-2xs"
+                  >
+                    <MapPin className="size-4 text-primary" />
+                    <span>🗺️ Select / Search Location on Google Map</span>
+                  </Button>
+
+                  {/* Realtime Distance & Charge Banner with exact 9-5=4 km calculation */}
+                  <div className="rounded-lg bg-muted/40 p-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between border border-border/60 gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="size-3.5 text-primary shrink-0" />
+                      <span className="text-[11px] text-muted-foreground">
+                        Distance from Salon:{" "}
+                        <strong className="text-foreground font-mono">{distanceKm} km</strong>
+                        {pickupDropCalc.isFree ? (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-medium ml-1">
+                            (Within 5 km Free Radius)
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-400 font-medium ml-1 font-mono">
+                            ({distanceKm} - 5 = {pickupDropCalc.extraKm} km extra @ ₹{PER_KM_CHARGE}
+                            /km)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {pickupDropCalc.isFree ? (
+                        <Badge
+                          variant="outline"
+                          className="text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/30 text-[10px]"
+                        >
+                          100% FREE
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-500/30 text-[10px] font-semibold"
+                        >
+                          +{inr(pickupDropCalc.deliveryFee)} ({pickupDropCalc.extraKm} km extra)
+                        </Badge>
+                      )}
+                      <a
+                        href={getGoogleMapsRouteUrl(
+                          SHOP.lat,
+                          SHOP.lng,
+                          pickupAddress || selectedArea,
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline font-medium shrink-0 bg-background px-2 py-0.5 rounded border shadow-2xs"
+                        title="Check official driving route on Google Maps"
+                      >
+                        <span>Google Route</span>
+                        <ExternalLink className="size-2.5" />
+                      </a>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                      <Label className="text-[10px] text-muted-foreground">Locality</Label>
+                      <Label className="text-[10px] text-muted-foreground">Selected Locality</Label>
                       <Select value={selectedArea} onValueChange={handleAreaChange}>
                         <SelectTrigger className="text-xs h-8">
                           <SelectValue />
@@ -1282,7 +1362,7 @@ function ServicesPage() {
                         <SelectContent>
                           {LUCKNOW_POPULAR_AREAS.map((a) => (
                             <SelectItem key={a.name} value={a.name} className="text-xs">
-                              {a.name}
+                              {a.name} ({a.distanceKm} km)
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1290,24 +1370,25 @@ function ServicesPage() {
                     </div>
                     <div>
                       <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <Label className="text-[10px]">Distance (km)</Label>
+                        <Label className="text-[10px] flex items-center gap-1">
+                          <Lock className="size-2.5 text-muted-foreground" /> Distance (Auto-Fixed)
+                        </Label>
                         <span className="font-mono font-semibold text-primary">
                           {distanceKm} km
                         </span>
                       </div>
-                      <Input
-                        type="number"
-                        min={0.5}
-                        max={50}
-                        step={0.5}
-                        value={distanceKm}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value) || 1;
-                          setDistanceKm(val);
-                          setSelectedArea("Custom / Enter Distance Manually");
-                        }}
-                        className="text-xs h-8 font-mono"
-                      />
+                      {/* Locked read-only distance tab based on location */}
+                      <div className="flex items-center justify-between h-8 px-2.5 rounded-md border border-border/80 bg-muted/50 text-xs font-mono font-medium text-foreground select-none">
+                        <span className="flex items-center gap-1.5">
+                          <Lock className="size-3 text-muted-foreground/70" />
+                          <span>{distanceKm} km</span>
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-sans">
+                          {pickupDropCalc.isFree
+                            ? "Free (≤5km)"
+                            : `+${pickupDropCalc.extraKm}km extra`}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -1715,6 +1796,28 @@ function ServicesPage() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Google Maps Location & Distance Modal */}
+      <GoogleMapsLocationPicker
+        open={isMapPickerOpen}
+        onOpenChange={setIsMapPickerOpen}
+        currentAddress={pickupAddress}
+        currentDistanceKm={distanceKm}
+        modeTitle="Salon Pickup & Drop"
+        onConfirm={(res) => {
+          setDistanceKm(res.distanceKm);
+          setPickupAddress(res.address);
+          setSelectedArea(res.areaName);
+          if (res.isFree) {
+            toast.success(
+              `Location set: ~${res.distanceKm} km (Within 5 km - 100% FREE Pickup & Drop)`,
+            );
+          } else {
+            toast.success(
+              `Location set: ~${res.distanceKm} km (+${inr(res.extraFee)} travel charge)`,
+            );
+          }
+        }}
+      />
     </div>
   );
 }

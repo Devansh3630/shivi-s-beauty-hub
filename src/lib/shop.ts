@@ -1109,18 +1109,242 @@ export function calculateDeliveryFee(distanceKm: number): {
   };
 }
 
+export function getGoogleMapsRouteUrl(destLat: number, destLng: number, destName?: string): string {
+  if (destName) {
+    return `https://www.google.com/maps/dir/?api=1&origin=${SHOP.lat},${SHOP.lng}&destination=${encodeURIComponent(destName + ", Lucknow")}`;
+  }
+  return `https://www.google.com/maps/dir/?api=1&origin=${SHOP.lat},${SHOP.lng}&destination=${destLat},${destLng}`;
+}
+
+export interface LucknowLandmark {
+  name: string;
+  category: string;
+  lat: number;
+  lng: number;
+  distanceKm: number;
+}
+
+export const LUCKNOW_DETAILED_LANDMARKS: LucknowLandmark[] = [
+  // Local / Within 5km (Free pickup & drop)
+  {
+    name: "Kabir Pur Village & Market",
+    category: "Local / Sultanpur Rd",
+    lat: 26.7925,
+    lng: 81.0234,
+    distanceKm: 0.8,
+  },
+  {
+    name: "Sultanpur Road Main Highway",
+    category: "Local / Sultanpur Rd",
+    lat: 26.796,
+    lng: 81.018,
+    distanceKm: 1.5,
+  },
+  {
+    name: "Bakkas / Kalli Paschim",
+    category: "Local / Sultanpur Rd",
+    lat: 26.782,
+    lng: 80.999,
+    distanceKm: 3.2,
+  },
+  {
+    name: "Arjunganj Market",
+    category: "Near Salon (<5km)",
+    lat: 26.815,
+    lng: 80.985,
+    distanceKm: 4.2,
+  },
+  {
+    name: "Ahimamau Crossing",
+    category: "Shaheed Path / Ahimamau",
+    lat: 26.808,
+    lng: 80.992,
+    distanceKm: 9.0,
+  },
+  {
+    name: "Ansal Sushant Golf City (Pocket 1-4)",
+    category: "Near Salon (<5km)",
+    lat: 26.799,
+    lng: 80.978,
+    distanceKm: 4.5,
+  },
+
+  // 5km - 10km (Shaheed Path, Gomti Nagar Ext, Telibagh)
+  {
+    name: "Medanta Hospital / Golf City",
+    category: "Shaheed Path / Ext",
+    lat: 26.792,
+    lng: 80.965,
+    distanceKm: 5.5,
+  },
+  {
+    name: "Lulu Mall Lucknow",
+    category: "Shaheed Path / Ext",
+    lat: 26.789,
+    lng: 80.957,
+    distanceKm: 6.2,
+  },
+  {
+    name: "Ekana International Stadium",
+    category: "Shaheed Path / Ext",
+    lat: 26.812,
+    lng: 80.998,
+    distanceKm: 6.5,
+  },
+  {
+    name: "Phoenix Palassio Mall",
+    category: "Shaheed Path / Ext",
+    lat: 26.8135,
+    lng: 80.994,
+    distanceKm: 6.8,
+  },
+  {
+    name: "Gomti Nagar Extension (Sector 1 to 7)",
+    category: "Shaheed Path / Ext",
+    lat: 26.825,
+    lng: 80.987,
+    distanceKm: 7.5,
+  },
+  {
+    name: "Vrindavan Yojna / Sector 5-18",
+    category: "South Lucknow",
+    lat: 26.775,
+    lng: 80.945,
+    distanceKm: 7.8,
+  },
+  {
+    name: "Telibagh Main Market",
+    category: "South Lucknow",
+    lat: 26.785,
+    lng: 80.932,
+    distanceKm: 8.8,
+  },
+  {
+    name: "Omaxe City / Amar Shaheed Path",
+    category: "South Lucknow",
+    lat: 26.762,
+    lng: 80.925,
+    distanceKm: 9.4,
+  },
+
+  // 10km - 15km (Gomti Nagar, Hazratganj, Alambagh, Charbagh)
+  {
+    name: "Patrakarpuram Market (Gomti Nagar)",
+    category: "Central / East Lucknow",
+    lat: 26.852,
+    lng: 80.995,
+    distanceKm: 11.0,
+  },
+  {
+    name: "Vipin Khand / Taj Hotel Area",
+    category: "Central / East Lucknow",
+    lat: 26.845,
+    lng: 80.975,
+    distanceKm: 10.5,
+  },
+  {
+    name: "Manoj Pandey Chowk / Gomti Nagar",
+    category: "Central / East Lucknow",
+    lat: 26.859,
+    lng: 80.991,
+    distanceKm: 11.8,
+  },
+  {
+    name: "Ashiyana / Bangla Bazar",
+    category: "South Lucknow",
+    lat: 26.798,
+    lng: 80.908,
+    distanceKm: 11.5,
+  },
+  {
+    name: "Charbagh Railway Station",
+    category: "Central Lucknow",
+    lat: 26.832,
+    lng: 80.922,
+    distanceKm: 12.5,
+  },
+  {
+    name: "Hazratganj / GPO & Janpath",
+    category: "Central Lucknow",
+    lat: 26.848,
+    lng: 80.946,
+    distanceKm: 13.2,
+  },
+  {
+    name: "Alambagh Bus Stand / Chander Nagar",
+    category: "South Lucknow",
+    lat: 26.818,
+    lng: 80.899,
+    distanceKm: 12.8,
+  },
+  {
+    name: "Chinhat / Matiyari Crossing",
+    category: "East Lucknow",
+    lat: 26.879,
+    lng: 81.015,
+    distanceKm: 13.5,
+  },
+
+  // 15km+ (Indira Nagar, Aliganj, Chowk, Jankipuram)
+  {
+    name: "Indira Nagar / Munshipulia",
+    category: "North / Trans Gomti",
+    lat: 26.883,
+    lng: 80.985,
+    distanceKm: 15.5,
+  },
+  {
+    name: "Mahanagar / Gole Market",
+    category: "North / Trans Gomti",
+    lat: 26.872,
+    lng: 80.952,
+    distanceKm: 14.8,
+  },
+  {
+    name: "Aliganj / Kapoorthala",
+    category: "North / Trans Gomti",
+    lat: 26.892,
+    lng: 80.942,
+    distanceKm: 17.0,
+  },
+  {
+    name: "Vikas Nagar / Ring Road",
+    category: "North / Trans Gomti",
+    lat: 26.899,
+    lng: 80.955,
+    distanceKm: 17.5,
+  },
+  {
+    name: "Chowk / Old Lucknow Heritage",
+    category: "North West Lucknow",
+    lat: 26.868,
+    lng: 80.902,
+    distanceKm: 18.0,
+  },
+  {
+    name: "Jankipuram Extension / AKTU",
+    category: "North West Lucknow",
+    lat: 26.925,
+    lng: 80.948,
+    distanceKm: 20.0,
+  },
+];
+
 export const LUCKNOW_POPULAR_AREAS = [
   { name: "Kabir Pur / Sultanpur Road (Local)", distanceKm: 1 },
-  { name: "Ahimamau / Arjunganj", distanceKm: 4 },
-  { name: "Shaheed Path / Lulu Mall", distanceKm: 6 },
+  { name: "Ahimamau / Arjunganj", distanceKm: 9 },
+  { name: "Medanta Hospital / Sushant Golf City", distanceKm: 5.5 },
+  { name: "Shaheed Path / Lulu Mall", distanceKm: 6.5 },
   { name: "Gomti Nagar Extension / Ekana Stadium", distanceKm: 7.5 },
-  { name: "Gomti Nagar / Patrakarpuram", distanceKm: 11 },
-  { name: "Alambagh / Telibagh", distanceKm: 9 },
-  { name: "Hazratganj / City Centre", distanceKm: 13 },
-  { name: "Indira Nagar / Munshipulia", distanceKm: 15 },
-  { name: "Charbagh / Railway Station", distanceKm: 12 },
-  { name: "Aliganj / Vikas Nagar", distanceKm: 17 },
-  { name: "Custom / Enter Distance Manually", distanceKm: 5 },
+  { name: "Telibagh / Vrindavan Yojna", distanceKm: 8 },
+  { name: "Alambagh / Bangla Bazar", distanceKm: 11 },
+  { name: "Gomti Nagar / Patrakarpuram", distanceKm: 12 },
+  { name: "Charbagh / Railway Station", distanceKm: 13 },
+  { name: "Hazratganj / City Centre", distanceKm: 14 },
+  { name: "Indira Nagar / Munshipulia", distanceKm: 16 },
+  { name: "Aliganj / Kapoorthala", distanceKm: 18 },
+  { name: "Chowk / Old Lucknow", distanceKm: 19 },
+  { name: "Jankipuram Extension", distanceKm: 21 },
 ] as const;
 
 export function inr(value: number | string) {

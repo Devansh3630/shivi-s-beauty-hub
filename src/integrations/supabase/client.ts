@@ -272,6 +272,13 @@ function setStoredJson<T>(key: string, val: T): void {
   }
 }
 
+function parseEqParam(searchParams: URLSearchParams, key: string): string | null {
+  const val = searchParams.get(key);
+  if (!val) return null;
+  if (val.startsWith("eq.")) return decodeURIComponent(val.slice(3));
+  return decodeURIComponent(val);
+}
+
 function createLocalFallbackHandler(input: RequestInfo | URL, init?: RequestInit): Response {
   const urlStr = typeof input === "string" ? input : (input as Request).url || input.toString();
   const url = new URL(urlStr, "https://local-supabase.fallback");
@@ -527,7 +534,26 @@ function createLocalFallbackHandler(input: RequestInfo | URL, init?: RequestInit
       });
     }
     if (method === "PATCH") {
-      return new Response(JSON.stringify({ updated: true }), {
+      const targetId = parseEqParam(url.searchParams, "id");
+      let updatedItem: FallbackAppointment | undefined;
+      const updated = appointments.map((a) => {
+        if (!targetId || a.id === targetId) {
+          updatedItem = { ...a, ...body };
+          return updatedItem;
+        }
+        return a;
+      });
+      setStoredJson("sb_fallback_appointments", updated);
+      return new Response(JSON.stringify(updatedItem ? [updatedItem] : []), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (method === "DELETE") {
+      const targetId = parseEqParam(url.searchParams, "id");
+      const remaining = appointments.filter((a) => a.id !== targetId);
+      setStoredJson("sb_fallback_appointments", remaining);
+      return new Response(JSON.stringify({ deleted: true }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -554,6 +580,31 @@ function createLocalFallbackHandler(input: RequestInfo | URL, init?: RequestInit
         headers: { "Content-Type": "application/json" },
       });
     }
+    if (method === "PATCH") {
+      const targetId = parseEqParam(url.searchParams, "id");
+      let updatedItem: FallbackOrder | undefined;
+      const updated = orders.map((o) => {
+        if (!targetId || o.id === targetId) {
+          updatedItem = { ...o, ...body };
+          return updatedItem;
+        }
+        return o;
+      });
+      setStoredJson("sb_fallback_orders", updated);
+      return new Response(JSON.stringify(updatedItem ? [updatedItem] : []), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (method === "DELETE") {
+      const targetId = parseEqParam(url.searchParams, "id");
+      const remaining = orders.filter((o) => o.id !== targetId);
+      setStoredJson("sb_fallback_orders", remaining);
+      return new Response(JSON.stringify({ deleted: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     return new Response(JSON.stringify(orders), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -573,6 +624,31 @@ function createLocalFallbackHandler(input: RequestInfo | URL, init?: RequestInit
       setStoredJson("sb_fallback_tailor_visits", visits);
       return new Response(JSON.stringify(newVisit), {
         status: 201,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (method === "PATCH") {
+      const targetId = parseEqParam(url.searchParams, "id");
+      let updatedItem: FallbackTailorVisit | undefined;
+      const updated = visits.map((v) => {
+        if (!targetId || v.id === targetId) {
+          updatedItem = { ...v, ...body };
+          return updatedItem;
+        }
+        return v;
+      });
+      setStoredJson("sb_fallback_tailor_visits", updated);
+      return new Response(JSON.stringify(updatedItem ? [updatedItem] : []), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (method === "DELETE") {
+      const targetId = parseEqParam(url.searchParams, "id");
+      const remaining = visits.filter((v) => v.id !== targetId);
+      setStoredJson("sb_fallback_tailor_visits", remaining);
+      return new Response(JSON.stringify({ deleted: true }), {
+        status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
