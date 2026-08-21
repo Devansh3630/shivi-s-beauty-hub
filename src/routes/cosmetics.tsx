@@ -1,11 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Minus, Plus, Search, Trash2 } from "lucide-react";
+import { CheckCircle2, MessageCircle, Minus, Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -13,7 +20,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { supabase } from "@/integrations/supabase/client";
-import { SHOP, inr } from "@/lib/shop";
+import {
+  SHOP,
+  inr,
+  generateCosmeticsOrderWhatsAppText,
+  openWhatsAppBill,
+  type CosmeticsOrderReceiptData,
+} from "@/lib/shop";
 
 export const Route = createFileRoute("/cosmetics")({
   head: () => ({
@@ -41,6 +54,7 @@ function CosmeticsPage() {
   const [category, setCategory] = useState("All");
   const [payment, setPayment] = useState("shop");
   const [address, setAddress] = useState("");
+  const [confirmedOrder, setConfirmedOrder] = useState<CosmeticsOrderReceiptData | null>(null);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["products"],
@@ -82,24 +96,44 @@ function CosmeticsPage() {
 
       const validPayment = payment === "upi" ? "upi" : "shop";
       const sanitizedAddress = address.trim().slice(0, 500);
-      const customerName = (profile?.full_name ?? "").trim().slice(0, 100);
+      const customerName = (profile?.full_name ?? "").trim().slice(0, 100) || "Valued Customer";
       const customerPhone = (profile?.phone ?? "").trim().slice(0, 20);
 
-      const { error } = await supabase.from("orders").insert({
-        user_id: user.id,
+      const { data: insertedData, error } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          items: sanitizedItems,
+          total_amount: cart.total,
+          payment_method: validPayment,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          address: sanitizedAddress,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      const orderId = insertedData?.id || `ORD-${Date.now().toString().slice(-6)}`;
+
+      return {
+        id: orderId,
+        customer_name: customerName,
+        customer_phone: customerPhone,
         items: sanitizedItems,
         total_amount: cart.total,
         payment_method: validPayment,
-        customer_name: customerName,
-        customer_phone: customerPhone,
         address: sanitizedAddress,
-      });
-      if (error) throw error;
+        status: "pending",
+        created_at: new Date().toISOString(),
+      } as CosmeticsOrderReceiptData;
     },
-    onSuccess: () => {
+    onSuccess: (receipt) => {
+      setConfirmedOrder(receipt);
       toast.success(
         payment === "upi"
-          ? `Order placed! Pay ${inr(cart.total)} by UPI to ${SHOP.phone}.`
+          ? `Order placed! Pay ${inr(receipt.total_amount)} by UPI to ${SHOP.phone}.`
           : "Order placed! Pay when you collect or receive it.",
       );
       cart.clear();
@@ -293,6 +327,108 @@ function CosmeticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Order Confirmation Dialog */}
+      <Dialog open={Boolean(confirmedOrder)} onOpenChange={() => setConfirmedOrder(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display text-2xl text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-6 text-emerald-600" />
+              Order Placed Successfully!
+            </DialogTitle>
+            <DialogDescription>
+              Your cosmetics order has been recorded at Shivi Parlour & Boutique.
+            </DialogDescription>
+          </DialogHeader>
+
+          {confirmedOrder && (
+            <div className="mt-3 space-y-3">
+              <div className="rounded-xl border bg-card p-4 space-y-2 text-xs">
+                <div className="flex justify-between border-b pb-2">
+                  <span className="text-muted-foreground">Order Ref</span>
+                  <span className="font-mono font-semibold">
+                    #{confirmedOrder.id.slice(0, 8).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Customer</span>
+                  <span className="font-medium">{confirmedOrder.customer_name}</span>
+                </div>
+                {confirmedOrder.address && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Delivery Address</span>
+                    <span className="font-medium text-right max-w-[200px] truncate">
+                      {confirmedOrder.address}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Payment Method</span>
+                  <span className="font-medium capitalize">
+                    {confirmedOrder.payment_method === "upi"
+                      ? `UPI (${SHOP.upiId})`
+                      : "Pay on Delivery / Collection"}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-2 text-sm font-bold text-primary">
+                  <span>Total Amount</span>
+                  <span className="font-mono text-base">{inr(confirmedOrder.total_amount)}</span>
+                </div>
+              </div>
+
+              {confirmedOrder.payment_method === "upi" && (
+                <div className="rounded-lg bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+                  <p className="font-semibold">UPI Payment Details:</p>
+                  <p className="mt-0.5">
+                    Please transfer {inr(confirmedOrder.total_amount)} to UPI ID{" "}
+                    <strong>{SHOP.upiId}</strong> ({SHOP.phone}) referencing order ref #
+                    {confirmedOrder.id.slice(0, 8).toUpperCase()}.
+                  </p>
+                </div>
+              )}
+
+              {/* Heartfelt Official Thank You Banner */}
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 text-center text-emerald-900 dark:text-emerald-200">
+                <p className="font-bold text-xs flex items-center justify-center gap-1.5">
+                  <Sparkles className="size-3.5 text-emerald-600" />
+                  Thank you for choosing Shivi Parlour & Boutique!
+                </p>
+                <p className="text-[11px] mt-1 text-emerald-800/80 dark:text-emerald-300/80">
+                  We prepare 100% genuine products. Send your official bill directly to your
+                  WhatsApp with one click below!
+                </p>
+              </div>
+
+              {/* Direct WhatsApp Bill Action */}
+              <Button
+                type="button"
+                className="w-full font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                onClick={() => {
+                  const msg = generateCosmeticsOrderWhatsAppText(confirmedOrder);
+                  openWhatsAppBill(confirmedOrder.customer_phone, msg);
+                  toast.success("Opening WhatsApp with your cosmetics bill...");
+                }}
+              >
+                <MessageCircle className="size-4 mr-2 fill-white" />
+                📲 Send Bill to WhatsApp
+              </Button>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setConfirmedOrder(null)}
+                >
+                  Close
+                </Button>
+                <Button asChild variant="secondary" className="flex-1">
+                  <Link to="/_authenticated/my-bookings">View in My Bookings</Link>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

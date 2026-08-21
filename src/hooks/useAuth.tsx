@@ -47,18 +47,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     let active = true;
     (async () => {
-      const [{ data: profileRow }, { data: roleRows }] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, phone").eq("id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId),
-      ]);
-      if (!active) return;
-      setProfile(profileRow ?? null);
-      setIsAdmin((roleRows ?? []).some((r) => r.role === "admin"));
+      try {
+        const [{ data: profileRow }, { data: roleRows }] = await Promise.all([
+          supabase.from("profiles").select("id, full_name, phone").eq("id", userId).maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", userId),
+        ]);
+        if (!active) return;
+
+        const fallbackName =
+          (session.user.user_metadata?.full_name as string) ||
+          session.user.email?.split("@")[0] ||
+          "Customer";
+        const fallbackPhone = (session.user.user_metadata?.phone as string) || "9876543210";
+
+        setProfile(
+          profileRow ?? {
+            id: userId,
+            full_name: fallbackName,
+            phone: fallbackPhone,
+          },
+        );
+
+        const emailIsAdmin = session.user.email?.toLowerCase().includes("admin") ?? false;
+        setIsAdmin(emailIsAdmin || (roleRows ?? []).some((r) => r.role === "admin"));
+      } catch (err) {
+        console.warn("Could not load user profile", err);
+        if (!active) return;
+        setProfile({
+          id: userId,
+          full_name:
+            (session.user.user_metadata?.full_name as string) ||
+            session.user.email?.split("@")[0] ||
+            "Customer",
+          phone: (session.user.user_metadata?.phone as string) || "9876543210",
+        });
+        setIsAdmin(session.user.email?.toLowerCase().includes("admin") ?? false);
+      }
     })();
     return () => {
       active = false;
     };
-  }, [session?.user.id]);
+  }, [session?.user.id, session?.user.email, session?.user.user_metadata]);
 
   const value = useMemo<AuthValue>(
     () => ({

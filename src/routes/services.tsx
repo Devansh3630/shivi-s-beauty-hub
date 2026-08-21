@@ -24,6 +24,7 @@ import {
   MapPin,
   Receipt,
   BadgePercent,
+  MessageCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,8 @@ import {
   type WaxingServiceOption,
   HANDS_FEET_SUB_OPTIONS,
   type HandsFeetServiceOption,
+  DEFAULT_PARLOUR_SERVICES,
+  DEFAULT_PARLOUR_CATEGORIES,
   inr,
   timeToMinutes,
   calculateSlotAvailability,
@@ -70,6 +73,8 @@ import {
   FREE_DELIVERY_RADIUS_KM,
   PER_KM_CHARGE,
   FIRST_ORDER_DISCOUNT_AMOUNT,
+  generateAppointmentWhatsAppText,
+  openWhatsAppBill,
 } from "@/lib/shop";
 
 export const Route = createFileRoute("/services")({
@@ -103,6 +108,7 @@ type ServiceRow = {
   name: string;
   price: number;
   duration_minutes: number;
+  description?: string;
 };
 
 export type SelectedParlourService = {
@@ -202,30 +208,25 @@ function ServicesPage() {
         console.warn("Could not fetch services from database", err);
       }
 
-      // Check if Waxing services exist in DB; if not, merge default WAXING_SUB_OPTIONS
-      const hasWaxing = dbServices.some((s) => s.category === "Waxing");
-      if (!hasWaxing) {
-        const waxingRows: ServiceRow[] = WAXING_SUB_OPTIONS.map((w) => ({
-          id: w.id,
-          category: "Waxing",
-          name: w.name,
-          price: w.price,
-          duration_minutes: w.durationMinutes,
-        }));
-        dbServices = [...dbServices, ...waxingRows];
-      }
-
-      // Check if Hands & Feet services exist in DB; if not, merge default HANDS_FEET_SUB_OPTIONS
-      const hasHandsFeet = dbServices.some((s) => s.category === "Hands & Feet");
-      if (!hasHandsFeet) {
-        const handsFeetRows: ServiceRow[] = HANDS_FEET_SUB_OPTIONS.map((h) => ({
-          id: h.id,
-          category: "Hands & Feet",
-          name: h.name,
-          price: h.price,
-          duration_minutes: h.durationMinutes,
-        }));
-        dbServices = [...dbServices, ...handsFeetRows];
+      // Merge all default services across categories (Hair, Threading, Facials, Skin, Makeup, Waxing, Hands & Feet)
+      // to ensure all options are always present and visible
+      for (const defSvc of DEFAULT_PARLOUR_SERVICES) {
+        const exists = dbServices.some(
+          (s) =>
+            s.id === defSvc.id ||
+            (s.name.toLowerCase().trim() === defSvc.name.toLowerCase().trim() &&
+              s.category.toLowerCase().trim() === defSvc.category.toLowerCase().trim()),
+        );
+        if (!exists) {
+          dbServices.push({
+            id: defSvc.id,
+            category: defSvc.category,
+            name: defSvc.name,
+            price: defSvc.price,
+            duration_minutes: defSvc.duration_minutes,
+            description: defSvc.description,
+          });
+        }
       }
 
       return dbServices;
@@ -456,14 +457,31 @@ function ServicesPage() {
   });
 
   const categories = useMemo(() => {
-    const list = Array.from(new Set((services ?? []).map((s) => s.category)));
-    if (!list.includes("Waxing")) {
-      list.splice(1, 0, "Waxing");
+    const rawCategories = Array.from(new Set((services ?? []).map((s) => s.category)));
+    const preferredOrder = [
+      "Hair",
+      "Threading",
+      "Facials",
+      "Skin",
+      "Makeup",
+      "Waxing",
+      "Hands & Feet",
+    ];
+    const ordered: string[] = [];
+    for (const cat of preferredOrder) {
+      if (
+        rawCategories.includes(cat) ||
+        DEFAULT_PARLOUR_CATEGORIES.some((defaultCat) => defaultCat === cat)
+      ) {
+        ordered.push(cat);
+      }
     }
-    if (!list.includes("Hands & Feet")) {
-      list.splice(2, 0, "Hands & Feet");
+    for (const cat of rawCategories) {
+      if (!ordered.includes(cat)) {
+        ordered.push(cat);
+      }
     }
-    return list;
+    return ordered.length > 0 ? ordered : (DEFAULT_PARLOUR_CATEGORIES as unknown as string[]);
   }, [services]);
 
   // Calculate slot capacities based on combined duration & 2-chair availability
@@ -670,9 +688,9 @@ function ServicesPage() {
             </div>
           ) : (
             <Tabs defaultValue={categories[0] ?? "Hair"} className="w-full">
-              <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 p-1 sm:grid-cols-4 lg:grid-cols-6">
+              <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 p-1 sm:grid-cols-4 lg:grid-cols-7">
                 {categories.map((c) => (
-                  <TabsTrigger key={c} value={c} className="text-xs py-2">
+                  <TabsTrigger key={c} value={c} className="text-xs py-2 font-medium">
                     {c}
                   </TabsTrigger>
                 ))}
@@ -990,65 +1008,121 @@ function ServicesPage() {
                 </div>
               </TabsContent>
 
-              {/* Other Tabs (Facials, Makeup, Threading, Skin) */}
+              {/* Other Tabs (Threading, Facials, Skin, Makeup, etc.) */}
               {categories
                 .filter((c) => c !== "Hair" && c !== "Waxing" && c !== "Hands & Feet")
-                .map((cat) => (
-                  <TabsContent key={cat} value={cat} className="mt-6 space-y-4">
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {(services ?? [])
-                        .filter((s) => s.category === cat)
-                        .map((svc) => {
-                          const isSelected = isServiceSelected(svc.id);
-                          return (
-                            <div
-                              key={svc.id}
-                              className={`flex flex-col justify-between rounded-xl border p-4 transition-all ${
-                                isSelected
-                                  ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
-                                  : "border-border bg-card hover:border-primary/40"
-                              }`}
-                            >
-                              <div>
-                                <div className="flex items-start justify-between gap-2">
-                                  <h5 className="font-display font-semibold text-sm text-foreground">
-                                    {svc.name}
-                                  </h5>
-                                  <span className="font-display font-bold text-sm text-primary shrink-0">
-                                    {inr(svc.price)}
-                                  </span>
-                                </div>
-                                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Clock className="size-3 text-primary" />
-                                  <span>{svc.duration_minutes} mins</span>
-                                </div>
-                              </div>
+                .map((cat) => {
+                  const categoryMeta: Record<
+                    string,
+                    { title: string; badge: string; desc: string }
+                  > = {
+                    Threading: {
+                      title: "Precision Threading & Facial Hair Clean Up",
+                      badge: "Organic Thread & Soothing Gel",
+                      desc: "Flawless eyebrow shaping, upper lip, forehead, and full face threading with cooling aloe.",
+                    },
+                    Facials: {
+                      title: "Skin Radiance, Hydra & Bridal Glow Facials",
+                      badge: "Herbal & Gold Rituals",
+                      desc: "Deep cleansing, blackhead extraction, rejuvenating massage, and nourishing glow packs.",
+                    },
+                    Skin: {
+                      title: "Skin Polishing, De-Tan & Bleach Therapy",
+                      badge: "Dermatological Care",
+                      desc: "Instant sun damage reversal, acne control, brightening bleach, and crystal skin polishing.",
+                    },
+                    Makeup: {
+                      title: "Party, Engagement & Bridal HD Makeup",
+                      badge: "Long-Lasting & Waterproof",
+                      desc: "Professional makeup by expert artists with premium products, lashes, and saree draping.",
+                    },
+                  };
+                  const meta = categoryMeta[cat] ?? {
+                    title: `${cat} Services`,
+                    badge: "Professional Care",
+                    desc: `Explore our specialized ${cat.toLowerCase()} treatments and salon rituals.`,
+                  };
 
-                              <div className="mt-3 pt-2 border-t flex justify-end">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant={isSelected ? "default" : "outline"}
-                                  className="h-7 text-xs"
-                                  onClick={() => toggleStandardService(svc)}
-                                >
-                                  {isSelected ? (
-                                    <span className="flex items-center gap-1">
-                                      <Check className="size-3.5" /> Added
+                  return (
+                    <TabsContent key={cat} value={cat} className="mt-6 space-y-4">
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="size-4 text-primary" />
+                            <h3 className="font-display font-semibold text-base text-foreground">
+                              {meta.title}
+                            </h3>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className="border-primary/40 bg-background text-[11px]"
+                          >
+                            {meta.badge}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{meta.desc}</p>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {(services ?? [])
+                          .filter((s) => s.category === cat)
+                          .map((svc) => {
+                            const isSelected = isServiceSelected(svc.id);
+                            return (
+                              <div
+                                key={svc.id}
+                                className={`flex flex-col justify-between rounded-xl border p-4 transition-all ${
+                                  isSelected
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+                                    : "border-border bg-card hover:border-primary/40"
+                                }`}
+                              >
+                                <div>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <h5 className="font-display font-semibold text-sm text-foreground">
+                                      {svc.name}
+                                    </h5>
+                                    <span className="font-display font-bold text-sm text-primary shrink-0">
+                                      {inr(svc.price)}
                                     </span>
-                                  ) : (
-                                    <span className="flex items-center gap-1">
-                                      <Plus className="size-3.5" /> Add
-                                    </span>
+                                  </div>
+                                  {svc.description && (
+                                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                                      {svc.description}
+                                    </p>
                                   )}
-                                </Button>
+                                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Clock className="size-3 text-primary" />
+                                    <span>{svc.duration_minutes} mins</span>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 pt-2 border-t flex justify-end">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={isSelected ? "default" : "outline"}
+                                    className="h-7 text-xs"
+                                    onClick={() => toggleStandardService(svc)}
+                                  >
+                                    {isSelected ? (
+                                      <span className="flex items-center gap-1">
+                                        <Check className="size-3.5" /> Added
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-1">
+                                        <Plus className="size-3.5" /> Add
+                                      </span>
+                                    )}
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </TabsContent>
-                ))}
+                            );
+                          })}
+                      </div>
+                    </TabsContent>
+                  );
+                })}
             </Tabs>
           )}
         </div>
@@ -1599,7 +1673,33 @@ function ServicesPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
+              {/* Heartfelt Official Thank You Banner */}
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 text-center text-emerald-900 dark:text-emerald-200">
+                <p className="font-bold text-xs flex items-center justify-center gap-1.5">
+                  <Sparkles className="size-3.5 text-emerald-600" />
+                  Thank you for choosing Shivi Parlour & Boutique!
+                </p>
+                <p className="text-[11px] mt-1 text-emerald-800/80 dark:text-emerald-300/80">
+                  Your workstation ({confirmedBooking.chair_id}) has been reserved. You can send the
+                  full branded bill directly to your WhatsApp with one click below!
+                </p>
+              </div>
+
+              {/* Direct WhatsApp Bill Action */}
+              <Button
+                type="button"
+                className="w-full font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                onClick={() => {
+                  const msg = generateAppointmentWhatsAppText(confirmedBooking);
+                  openWhatsAppBill(confirmedBooking.customer_phone, msg);
+                  toast.success("Opening WhatsApp with your official bill...");
+                }}
+              >
+                <MessageCircle className="size-4 mr-2 fill-white" />
+                📲 Send Bill to WhatsApp
+              </Button>
+
+              <div className="flex gap-2 pt-1">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -1607,7 +1707,7 @@ function ServicesPage() {
                 >
                   Close
                 </Button>
-                <Button asChild className="flex-1">
+                <Button asChild variant="secondary" className="flex-1">
                   <Link to="/_authenticated/my-bookings">View in My Bookings</Link>
                 </Button>
               </div>

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ import {
   Car,
   BadgePercent,
   CheckCircle,
+  MessageCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,8 @@ import {
   FREE_DELIVERY_RADIUS_KM,
   PER_KM_CHARGE,
   FIRST_ORDER_DISCOUNT_AMOUNT,
+  generateTailorVisitWhatsAppText,
+  openWhatsAppBill,
 } from "@/lib/shop";
 
 function BoutiqueInfoNote({
@@ -1305,13 +1308,44 @@ function BoutiquePage() {
                 </div>
               </div>
 
+              {/* Heartfelt Official Thank You Banner */}
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/70 dark:bg-emerald-950/30 p-3.5 text-center text-emerald-900 dark:text-emerald-200">
+                <p className="font-bold text-xs flex items-center justify-center gap-1.5">
+                  <Sparkles className="size-3.5 text-emerald-600" />
+                  Thank you for choosing Shivi Parlour & Boutique!
+                </p>
+                <p className="text-[11px] mt-1 text-emerald-800/80 dark:text-emerald-300/80">
+                  Our master tailor will visit your home on {confirmedVisit.preferred_date}. Send
+                  your official home visit invoice to your WhatsApp with one click!
+                </p>
+              </div>
+
+              {/* Direct WhatsApp Bill Action */}
               <Button
                 type="button"
-                className="w-full font-semibold"
-                onClick={() => setConfirmedVisit(null)}
+                className="w-full font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                onClick={() => {
+                  const msg = generateTailorVisitWhatsAppText(confirmedVisit);
+                  openWhatsAppBill(confirmedVisit.customer_phone, msg);
+                  toast.success("Opening WhatsApp with tailor visit invoice...");
+                }}
               >
-                Done
+                <MessageCircle className="size-4 mr-2 fill-white" />
+                📲 Send Bill to WhatsApp
               </Button>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setConfirmedVisit(null)}
+                >
+                  Close
+                </Button>
+                <Button asChild variant="secondary" className="flex-1">
+                  <Link to="/_authenticated/my-bookings">View in My Bookings</Link>
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

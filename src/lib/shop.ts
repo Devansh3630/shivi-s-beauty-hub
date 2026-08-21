@@ -214,6 +214,309 @@ export const HANDS_FEET_SUB_OPTIONS: HandsFeetServiceOption[] = [
       "Therapeutic warm foot soak, calloused heel softening, dead skin exfoliation with organic scrub, relaxing foot massage, cuticle grooming and nail polish.",
     badge: "Relaxing",
   },
+  {
+    id: "hf-deluxe-pedicure",
+    name: "Deluxe Pedicure & Foot Spa",
+    shortName: "Deluxe Pedicure",
+    category: "Hands & Feet",
+    price: 799,
+    durationMinutes: 60,
+    description:
+      "Luxury aromatherapy foot soak, intensive calloused skin removal, peppermint sea-salt scrub, deep hydration mask, and extended 20-min pressure-point massage.",
+    badge: "Spa Special",
+  },
+  {
+    id: "hf-nail-art",
+    name: "Nail Art & Gel Polish",
+    shortName: "Nail Art",
+    category: "Hands & Feet",
+    price: 299,
+    durationMinutes: 30,
+    description:
+      "Trendy custom nail art accents, glitter ombré, French tips or durable gel polish application for long-lasting high shine.",
+  },
+];
+
+export type DefaultParlourService = {
+  id: string;
+  category: string;
+  name: string;
+  price: number;
+  duration_minutes: number;
+  description?: string;
+};
+
+export const DEFAULT_PARLOUR_CATEGORIES = [
+  "Hair",
+  "Facials",
+  "Threading",
+  "Skin",
+  "Makeup",
+  "Waxing",
+  "Hands & Feet",
+] as const;
+
+export const DEFAULT_PARLOUR_SERVICES: DefaultParlourService[] = [
+  // Hair
+  {
+    id: "svc-hair-1",
+    category: "Hair",
+    name: "Hair Cut & Styling",
+    price: 350,
+    duration_minutes: 45,
+    description: "Professional haircut tailored to your face shape with wash, blow dry & styling.",
+  },
+  {
+    id: "svc-hair-2",
+    category: "Hair",
+    name: "Hair Spa Treatment",
+    price: 900,
+    duration_minutes: 60,
+    description: "Deep nourishing hair spa with scalp massage, steam, and intense gloss mask.",
+  },
+  {
+    id: "svc-hair-3",
+    category: "Hair",
+    name: "Global Hair Colour",
+    price: 2200,
+    duration_minutes: 120,
+    description: "Full head ammonia-free hair coloring with rich tone and radiant shine.",
+  },
+  {
+    id: "svc-hair-4",
+    category: "Hair",
+    name: "Keratin Smoothening",
+    price: 3500,
+    duration_minutes: 150,
+    description: "Frizz-free, silky straight and manageable hair treatment lasting up to 6 months.",
+  },
+  {
+    id: "svc-hair-5",
+    category: "Hair",
+    name: "Hair Wash & Blow Dry",
+    price: 300,
+    duration_minutes: 30,
+    description:
+      "Clarifying wash followed by professional blowout styling (straight or outward curl).",
+  },
+  {
+    id: "svc-hair-6",
+    category: "Hair",
+    name: "Hair Straightening / Rebonding",
+    price: 4000,
+    duration_minutes: 180,
+    description: "Permanent sleek straight hair transformation with damage protection serum.",
+  },
+
+  // Facials
+  {
+    id: "svc-facial-1",
+    category: "Facials",
+    name: "Gold Facial",
+    price: 1100,
+    duration_minutes: 60,
+    description: "24K gold dust enriched facial giving instant bridal radiance and firming effect.",
+  },
+  {
+    id: "svc-facial-2",
+    category: "Facials",
+    name: "Fruit Facial",
+    price: 600,
+    duration_minutes: 45,
+    description:
+      "Natural fruit enzyme extracts suitable for sensitive skin, deeply nourishing & refreshing.",
+  },
+  {
+    id: "svc-facial-3",
+    category: "Facials",
+    name: "Hydra Glow Facial",
+    price: 1800,
+    duration_minutes: 75,
+    description:
+      "Intense hydration and pore cleansing treatment delivering a glass-skin dewy finish.",
+  },
+  {
+    id: "svc-facial-4",
+    category: "Facials",
+    name: "Diamond Facial",
+    price: 1500,
+    duration_minutes: 60,
+    description:
+      "Diamond ash micro-dermabrasion action for youthful firmness and dark spot reduction.",
+  },
+  {
+    id: "svc-facial-5",
+    category: "Facials",
+    name: "O3+ Bridal Glow Facial",
+    price: 2200,
+    duration_minutes: 75,
+    description:
+      "Premium brightening & whitening professional treatment for weddings and celebrations.",
+  },
+  {
+    id: "svc-facial-6",
+    category: "Facials",
+    name: "Anti-Tan & Brightening Facial",
+    price: 950,
+    duration_minutes: 50,
+    description: "Removes stubborn sun tanning, pigmentation, and evens out dull skin tone.",
+  },
+  {
+    id: "svc-facial-7",
+    category: "Facials",
+    name: "Papaya Clean Up",
+    price: 450,
+    duration_minutes: 35,
+    description: "Quick pore unclogging, blackhead extraction and soothing fruit pack.",
+  },
+
+  // Threading
+  {
+    id: "svc-thread-1",
+    category: "Threading",
+    name: "Eyebrow Threading",
+    price: 50,
+    duration_minutes: 10,
+    description: "Precision eyebrow shaping matching your natural arch with soothing aloe gel.",
+  },
+  {
+    id: "svc-thread-2",
+    category: "Threading",
+    name: "Upper Lip & Chin",
+    price: 60,
+    duration_minutes: 10,
+    description: "Gentle removal of fine upper lip and chin fuzz for a flawless base.",
+  },
+  {
+    id: "svc-thread-3",
+    category: "Threading",
+    name: "Forehead Threading",
+    price: 40,
+    duration_minutes: 10,
+    description: "Neat hairline clean up and forehead threading.",
+  },
+  {
+    id: "svc-thread-4",
+    category: "Threading",
+    name: "Full Face Threading",
+    price: 250,
+    duration_minutes: 25,
+    description:
+      "Complete facial threading (brows, upper lip, chin, forehead and sides) with calming lotion.",
+  },
+
+  // Skin
+  {
+    id: "svc-skin-1",
+    category: "Skin",
+    name: "Skin Polishing",
+    price: 1200,
+    duration_minutes: 60,
+    description: "Full body or face micro-crystal exfoliation for smooth, baby-soft texture.",
+  },
+  {
+    id: "svc-skin-2",
+    category: "Skin",
+    name: "De-Tan Treatment",
+    price: 800,
+    duration_minutes: 45,
+    description: "Effective sun tan reversal pack with lactic acid & kojic brightening actives.",
+  },
+  {
+    id: "svc-skin-3",
+    category: "Skin",
+    name: "Anti-Acne Clean Up",
+    price: 700,
+    duration_minutes: 40,
+    description: "Tea tree and neem therapeutic extraction preventing breakouts and excess oil.",
+  },
+  {
+    id: "svc-skin-4",
+    category: "Skin",
+    name: "Full Face Bleach",
+    price: 350,
+    duration_minutes: 30,
+    description: "Gentle gold or herbal bleach to lighten facial hair and brighten complexion.",
+  },
+  {
+    id: "svc-skin-5",
+    category: "Skin",
+    name: "Oxy Bleach & Glow Pack",
+    price: 450,
+    duration_minutes: 35,
+    description: "Oxygen infused bleach with radiant glow pack for instant luminosity.",
+  },
+
+  // Makeup
+  {
+    id: "svc-mu-1",
+    category: "Makeup",
+    name: "Party Makeup",
+    price: 2500,
+    duration_minutes: 75,
+    description: "Glamorous evening makeup with lashes, contouring and hairstyling included.",
+  },
+  {
+    id: "svc-mu-2",
+    category: "Makeup",
+    name: "Bridal Makeup Package",
+    price: 12000,
+    duration_minutes: 180,
+    description:
+      "Complete HD/Airbrush bridal transformation including hair styling, draping, lashes & touch-up kit.",
+  },
+  {
+    id: "svc-mu-3",
+    category: "Makeup",
+    name: "Engagement Makeup",
+    price: 6000,
+    duration_minutes: 120,
+    description: "Soft romantic HD makeup look with elegant floral or modern hair styling.",
+  },
+  {
+    id: "svc-mu-4",
+    category: "Makeup",
+    name: "HD Reception Makeup",
+    price: 5000,
+    duration_minutes: 90,
+    description: "High-definition camera ready finish with long-lasting waterproof formula.",
+  },
+  {
+    id: "svc-mu-5",
+    category: "Makeup",
+    name: "Eye Makeup & Lashes",
+    price: 800,
+    duration_minutes: 30,
+    description: "Smokey, cut-crease, or glitter eye makeup with dramatic 3D false lashes.",
+  },
+  {
+    id: "svc-mu-6",
+    category: "Makeup",
+    name: "Saree Draping & Styling",
+    price: 400,
+    duration_minutes: 20,
+    description: "Flawless pleated saree, lehenga dupatta, or can-can setting.",
+  },
+
+  // Waxing
+  ...WAXING_SUB_OPTIONS.map((w) => ({
+    id: w.id,
+    category: "Waxing",
+    name: w.name,
+    price: w.price,
+    duration_minutes: w.durationMinutes,
+    description: w.description,
+  })),
+
+  // Hands & Feet
+  ...HANDS_FEET_SUB_OPTIONS.map((h) => ({
+    id: h.id,
+    category: "Hands & Feet",
+    name: h.name,
+    price: h.price,
+    duration_minutes: h.durationMinutes,
+    description: h.description,
+  })),
 ];
 
 export type ChairId = (typeof CHAIR_RESOURCES)[number]["id"];
@@ -904,4 +1207,190 @@ export function localBusinessSchema() {
     currenciesAccepted: "INR",
     paymentAccepted: "Cash, UPI",
   };
+}
+
+export type AppointmentReceiptData = {
+  id: string;
+  customer_name?: string;
+  customer_phone?: string;
+  service_name: string;
+  services_count?: number;
+  services_subtotal?: number;
+  appointment_date: string;
+  time_slot: string;
+  end_time?: string;
+  duration_minutes?: number;
+  chair_id?: string;
+  has_pickup_drop?: boolean;
+  pickup_address?: string;
+  pickup_fee?: number;
+  discount_amount?: number;
+  price: number;
+  payment_method?: string;
+  status?: string;
+};
+
+export type TailorVisitReceiptData = {
+  id: string;
+  customer_name?: string;
+  customer_phone?: string;
+  outfit_type?: string;
+  outfits?: string[];
+  items_subtotal?: number;
+  preferred_date?: string;
+  preferred_slot?: string;
+  address?: string;
+  delivery_fee?: number;
+  discount_amount?: number;
+  final_total?: number;
+  price?: number;
+  status?: string;
+};
+
+export type CosmeticsOrderReceiptData = {
+  id: string;
+  customer_name?: string;
+  customer_phone?: string;
+  items?: Array<{ name: string; price: number; quantity: number }> | unknown;
+  total_amount: number;
+  payment_method?: string;
+  address?: string;
+  status?: string;
+  created_at?: string;
+};
+
+export function generateAppointmentWhatsAppText(data: AppointmentReceiptData): string {
+  const ref = data.id.slice(0, 8).toUpperCase();
+  const dur = data.duration_minutes || 45;
+  const chair = data.chair_id || "Chair 1";
+  const payMode = data.payment_method === "upi" ? `UPI (${SHOP.upiId})` : "Pay at Salon";
+  const subtotal = data.services_subtotal || data.price;
+  const pickupFee = data.pickup_fee ?? (data.has_pickup_drop ? 0 : 0);
+  const discount = data.discount_amount || 0;
+
+  return [
+    `🌸 *${SHOP.name.toUpperCase()}* 🌸`,
+    `📍 *Address:* ${SHOP.address}`,
+    `📞 *Helpline / WhatsApp:* ${SHOP.phoneIntl}`,
+    `✨ *OFFICIAL PARLOUR BOOKING BILL & RECEIPT* ✨`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `📋 *Booking Ref:* #${ref}`,
+    `👤 *Customer Name:* ${data.customer_name || "Valued Customer"}`,
+    data.customer_phone ? `📱 *Phone:* ${data.customer_phone}` : null,
+    `📅 *Appointment Date:* ${data.appointment_date}`,
+    `⏰ *Time Slot:* ${data.time_slot}${data.end_time ? ` – ${data.end_time}` : ""} (${dur} mins)`,
+    `🪑 *Assigned Workstation:* ${chair}`,
+    `💅 *Booked Services:* ${data.service_name}`,
+    data.has_pickup_drop
+      ? `🚗 *Lucknow Pickup & Drop:* ${data.pickup_address || "Requested"} (${pickupFee === 0 ? "FREE within 5 km" : inr(pickupFee)})`
+      : null,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💰 *BILL BREAKDOWN:*`,
+    `• Services Subtotal: ${inr(subtotal)}`,
+    data.has_pickup_drop
+      ? `• Pickup & Drop: ${pickupFee === 0 ? "FREE (₹0)" : inr(pickupFee)}`
+      : null,
+    discount > 0 ? `• Welcome 1st Order Discount: -${inr(discount)}` : null,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💵 *FINAL TOTAL PAYABLE: ${inr(data.price)}*`,
+    `💳 *Payment Mode:* ${payMode}`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💖 *THANK YOU FOR CHOOSING SHIVI PARLOUR & BOUTIQUE!* 💖`,
+    `"We are committed to giving you the best beauty care and salon experience in Lucknow. For any rescheduling or queries, reach us anytime on ${SHOP.phone}."`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function generateTailorVisitWhatsAppText(data: TailorVisitReceiptData): string {
+  const ref = data.id.slice(0, 8).toUpperCase();
+  const outfits = data.outfits?.join(", ") || data.outfit_type || "Custom Stitching";
+  const total = data.final_total ?? data.price ?? 0;
+  const subtotal = data.items_subtotal || total;
+  const deliveryFee = data.delivery_fee || 0;
+  const discount = data.discount_amount || 0;
+
+  return [
+    `🌸 *${SHOP.name.toUpperCase()}* 🌸`,
+    `📍 *Address:* ${SHOP.address}`,
+    `📞 *Helpline / WhatsApp:* ${SHOP.phoneIntl}`,
+    `✨ *OFFICIAL BOUTIQUE HOME VISIT INVOICE* ✨`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `📋 *Booking Ref:* #${ref}`,
+    `👤 *Customer Name:* ${data.customer_name || "Valued Customer"}`,
+    data.customer_phone ? `📱 *Phone:* ${data.customer_phone}` : null,
+    `👗 *Selected Outfits:* ${outfits}`,
+    `📅 *Measurement Date:* ${data.preferred_date || "As scheduled"}`,
+    `⏰ *Preferred Slot:* ${data.preferred_slot || "10:00 AM - 1:00 PM"}`,
+    data.address ? `🏠 *Home Visit Address:* ${data.address}` : null,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💰 *ESTIMATED BILL:*`,
+    `• Outfits Subtotal: ${inr(subtotal)}`,
+    `• Home Measurement Visit: ${deliveryFee === 0 ? "FREE (Within 5 km)" : inr(deliveryFee)}`,
+    discount > 0 ? `• Welcome Discount: -${inr(discount)}` : null,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💵 *ESTIMATED TOTAL: ${inr(total)}*`,
+    `💳 *Payment Mode:* Pay after fitting & delivery / UPI`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💖 *THANK YOU FOR CHOOSING SHIVI PARLOUR & BOUTIQUE!* 💖`,
+    `"Our master tailor will visit your home with fabric swatches & measurement tapes for a flawless custom fit in Lucknow."`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function generateCosmeticsOrderWhatsAppText(data: CosmeticsOrderReceiptData): string {
+  const ref = data.id.slice(0, 8).toUpperCase();
+  const payMode =
+    data.payment_method === "upi" ? `Online UPI (${SHOP.upiId})` : "Pay on Delivery / Collection";
+
+  let itemsList = "Genuine Beauty & Cosmetics Products";
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    itemsList = data.items
+      .map(
+        (it: { name: string; price: number; quantity: number }) =>
+          `• ${it.name} (Qty: ${it.quantity}) - ${inr(it.price * it.quantity)}`,
+      )
+      .join("\n");
+  }
+
+  return [
+    `🌸 *${SHOP.name.toUpperCase()}* 🌸`,
+    `📍 *Address:* ${SHOP.address}`,
+    `📞 *Helpline / WhatsApp:* ${SHOP.phoneIntl}`,
+    `✨ *OFFICIAL COSMETICS ORDER BILL & RECEIPT* ✨`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `📋 *Order Ref:* #${ref}`,
+    `👤 *Customer Name:* ${data.customer_name || "Valued Customer"}`,
+    data.customer_phone ? `📱 *Phone:* ${data.customer_phone}` : null,
+    data.address
+      ? `🏠 *Delivery Address:* ${data.address}`
+      : `🛍️ *Mode:* Store Pickup / Local Delivery`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `🛍️ *ORDERED ITEMS:*`,
+    itemsList,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💵 *FINAL TOTAL AMOUNT: ${inr(data.total_amount)}*`,
+    `💳 *Payment Mode:* ${payMode}`,
+    `━━━━━━━━━━━━━━━━━━━━━━━━`,
+    `💖 *THANK YOU FOR CHOOSING SHIVI PARLOUR & BOUTIQUE!* 💖`,
+    `"100% Genuine beauty & skincare products. We appreciate your trust in Shivi Parlour & Boutique!"`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function openWhatsAppBill(customerPhone: string | undefined, messageText: string) {
+  let cleanNumber = (customerPhone || "").replace(/\D/g, "");
+  if (cleanNumber.length === 10) {
+    cleanNumber = "91" + cleanNumber;
+  } else if (cleanNumber.length === 12 && cleanNumber.startsWith("91")) {
+    // valid
+  } else {
+    cleanNumber = "91" + SHOP.phone;
+  }
+  const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(messageText)}`;
+  if (typeof window !== "undefined") {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 }

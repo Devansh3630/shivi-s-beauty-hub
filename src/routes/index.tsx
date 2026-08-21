@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Scissors, Shirt, Sparkles, Star } from "lucide-react";
+import { CalendarCheck2, MessageCircle, Scissors, Shirt, Sparkles, Star } from "lucide-react";
 
 import heroImage from "@/assets/hero.jpg";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { SHOP, inr } from "@/lib/shop";
+import { SHOP, inr, DEFAULT_PARLOUR_SERVICES } from "@/lib/shop";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,13 +45,24 @@ function Home() {
   const { data: featured } = useQuery({
     queryKey: ["services", "featured"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("services")
-        .select("id, name, category, price")
-        .order("price", { ascending: false })
-        .limit(6);
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from("services")
+          .select("id, name, category, price")
+          .order("price", { ascending: false })
+          .limit(6);
+        if (!error && data && data.length > 0) {
+          return data;
+        }
+      } catch {
+        // Fallback to default services
+      }
+      return DEFAULT_PARLOUR_SERVICES.slice(0, 6).map((s) => ({
+        id: s.id,
+        name: s.name,
+        category: s.category,
+        price: s.price,
+      }));
     },
   });
 
@@ -112,7 +123,7 @@ function Home() {
             },
             {
               icon: Star,
-              title: "Cosmetics Store",
+              title: "Cosmetics",
               body: "Trusted makeup, skincare, haircare and fragrance brands with in-shop pickup or delivery.",
               to: "/cosmetics" as const,
               cta: "Shop cosmetics",
@@ -138,6 +149,29 @@ function Home() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* My Bookings & WhatsApp Bill Notice Banner */}
+        <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+          <div className="space-y-1.5 text-center md:text-left">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-3 py-0.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+              <MessageCircle className="size-3.5 fill-emerald-600 text-emerald-600" /> Instant
+              WhatsApp Bills & Receipts
+            </div>
+            <h3 className="font-display text-2xl text-foreground">
+              Track Your Active Bookings Anytime
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-xl">
+              Check all your parlour appointments, tailor measurements, and cosmetics orders in one
+              place with official branded receipts sent straight to your WhatsApp.
+            </p>
+          </div>
+          <Button asChild size="lg" className="shrink-0 font-medium">
+            <Link to="/_authenticated/my-bookings">
+              <CalendarCheck2 className="size-4 mr-2" />
+              Open My Bookings
+            </Link>
+          </Button>
         </div>
       </section>
 
